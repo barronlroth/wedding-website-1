@@ -8,7 +8,7 @@ const Hero: React.FC = () => {
       <div 
         className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat bg-fixed"
         style={{
-          backgroundImage: 'url("https://images.unsplash.com/photo-1544124339-422d9b6e0300?q=80&w=2789&auto=format&fit=crop")', // Lush tropical vibe
+          backgroundImage: 'url("/images/hero.jpg")',
         }}
       >
         <div className="absolute inset-0 bg-black/20" /> {/* Overlay */}
