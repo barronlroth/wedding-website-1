@@ -17,7 +17,7 @@ const HowWeMet: React.FC = () => {
         ref={containerRef}
         className="w-full max-w-[960px] relative rounded-sm overflow-hidden shadow-lg border border-stone-200"
       >
-        <div className="relative w-full" style={{ paddingBottom: 'clamp(56.25%, 75vw, 75%)' }}>
+        <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
           <iframe
             src="/game/embed.html"
             title="How We Met — A Pixel Art Game"
