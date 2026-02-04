@@ -163,6 +163,7 @@
 
       this.messageBox = this.createMessageBox();
       this.gameOverText = this.createGameOverText();
+      this.restartButton = this.createRestartButton();
 
       this.createSnowField();
 
@@ -464,6 +465,7 @@
       if (this.health <= 0) {
         this.gameOver = true;
         this.gameOverText.setVisible(true);
+        this.restartButton.setVisible(true);
       }
     }
 
@@ -576,6 +578,50 @@
         .setOrigin(0.5)
         .setDepth(12)
         .setVisible(false);
+    }
+
+    createRestartButton() {
+      const buttonWidth = 140;
+      const buttonHeight = 36;
+      const x = (WIDTH - buttonWidth) / 2;
+      const y = HEIGHT / 2 + 28;
+
+      const bg = this.add.graphics();
+      bg.fillStyle(0x24324f, 0.95);
+      bg.fillRoundedRect(0, 0, buttonWidth, buttonHeight, 10);
+      bg.lineStyle(2, 0x5f7db8, 0.9);
+      bg.strokeRoundedRect(0, 0, buttonWidth, buttonHeight, 10);
+
+      const text = this.add
+        .text(buttonWidth / 2, buttonHeight / 2, "Restart", {
+          fontFamily: "Arial, sans-serif",
+          fontSize: "14px",
+          color: "#e6eefc",
+        })
+        .setOrigin(0.5);
+
+      const container = this.add.container(0, 0, [bg, text]);
+      container.setPosition(x, y);
+      container.setDepth(12);
+      container.setSize(buttonWidth, buttonHeight);
+      container.setInteractive({
+        hitArea: new Phaser.Geom.Rectangle(0, 0, buttonWidth, buttonHeight),
+        hitAreaCallback: Phaser.Geom.Rectangle.Contains,
+        useHandCursor: true,
+      });
+      container.on("pointerdown", () => {
+        this.restartGame();
+      });
+      container.setVisible(false);
+      return container;
+    }
+
+    restartGame() {
+      this.gameOver = true;
+      if (this.music && this.music.isPlaying) {
+        this.music.stop();
+      }
+      this.scene.restart();
     }
   }
 
