@@ -33,6 +33,25 @@
   const asset = (name) => encodeURI(`${ASSET_ROOT}${name}`);
   const rootFile = (name) => encodeURI(`${name}`);
 
+  const DIALOGUE_LINES = [
+    {
+      speaker: "Barron",
+      text: "Snowy streets, big city... and there you are.",
+    },
+    {
+      speaker: "Nina",
+      text: "Toronto always makes an entrance. So do you.",
+    },
+    {
+      speaker: "Barron",
+      text: "Good thing we met here. I was ready to call it a day.",
+    },
+    {
+      speaker: "Nina",
+      text: "Next level: Florida. Sunlight, palm trees, and a brand-new chapter.",
+    },
+  ];
+
   class MeetingScene extends Phaser.Scene {
     preload() {
       const { width, height } = this.scale;
@@ -85,6 +104,8 @@
         frameWidth: 36,
         frameHeight: 10,
       });
+      this.load.image("barron-portrait", asset("portraits/barron-portrait-1.png"));
+      this.load.image("nina-portrait", asset("portraits/nina-portrait-1.png"));
       this.load.audio(
         "bgm",
         [
@@ -161,8 +182,14 @@
       });
       // Snowball lifecycle: frame 0 = intact, frame 1 = streaking, frame 2 = splatter
 
-      this.messageBox = this.createMessageBox();
       this.gameOverText = this.createGameOverText();
+      this.dialogueContainer = this.createDialogueUI();
+      this.transitionCard = this.createTransitionCard();
+      this.dialogueLines = DIALOGUE_LINES;
+      this.dialogueIndex = 0;
+      this.dialogueActive = false;
+      this.transitionActive = false;
+      this.dialogueAdvanceAt = 0;
       this.restartButton = this.createRestartButton();
 
       this.createSnowField();
@@ -215,9 +242,14 @@
         a: Phaser.Input.Keyboard.KeyCodes.A,
         d: Phaser.Input.Keyboard.KeyCodes.D,
         space: Phaser.Input.Keyboard.KeyCodes.SPACE,
+        enter: Phaser.Input.Keyboard.KeyCodes.ENTER,
       });
 
       this.input.on("pointerdown", () => {
+        if (this.dialogueActive || this.transitionActive) {
+          this.advanceDialogue();
+          return;
+        }
         this.pointerDown = true;
       });
       this.input.on("pointerup", () => {
@@ -235,6 +267,11 @@
       const dt = delta / 1000;
 
       this.updateSnow(dt);
+
+      if (this.dialogueActive || this.transitionActive) {
+        this.updateDialogueInput();
+        return;
+      }
 
       const moveDir = this.getMoveDir();
       this.moveDir = moveDir;
@@ -495,7 +532,7 @@
 
     triggerMeet() {
       this.met = true;
-      this.messageBox.setVisible(true);
+      this.startDialogue();
     }
 
     createFloorTexture() {
@@ -540,38 +577,304 @@
       }
     }
 
-    createMessageBox() {
-      const boxWidth = 360;
-      const boxHeight = 90;
-      const x = (WIDTH - boxWidth) / 2;
-      const y = 30;
+    createDialogueUI() {
+      const container = this.add.container(0, 0);
+      container.setDepth(20);
+      container.setVisible(false);
 
-      const bg = this.add.graphics();
-      bg.fillStyle(0x0f1626, 0.92);
-      bg.fillRoundedRect(x, y, boxWidth, boxHeight, 12);
-      bg.lineStyle(2, 0x5f7db8, 0.8);
-      bg.strokeRoundedRect(x, y, boxWidth, boxHeight, 12);
+      const overlay = this.add.rectangle(0, 0, WIDTH, HEIGHT, 0x05070f, 0.58).setOrigin(0, 0);
+      container.add(overlay);
 
-      const text = this.add
-        .text(WIDTH / 2, y + boxHeight / 2, "Hearts in Toronto.\nSave the Date!", {
-          fontFamily: "Arial, sans-serif",
-          fontSize: "16px",
-          color: "#e6eefc",
-          align: "center",
+      const boxX = 24;
+      const boxW = WIDTH - 48;
+      const boxH = 94;
+      const boxY = (HEIGHT - boxH) / 2;
+
+      const box = this.add.graphics();
+      box.fillGradientStyle(0x0d1a33, 0x0d1a33, 0x152a54, 0x152a54, 1);
+      box.fillRoundedRect(boxX, boxY, boxW, boxH, 12);
+      box.lineStyle(2, 0x7bc3ff, 0.95);
+      box.strokeRoundedRect(boxX, boxY, boxW, boxH, 12);
+      box.lineStyle(1, 0x213868, 1);
+      box.strokeRoundedRect(boxX + 4, boxY + 4, boxW - 8, boxH - 8, 10);
+      container.add(box);
+
+      const namePlateW = 148;
+      const namePlateH = 22;
+      const namePlateX = boxX + 16;
+      const namePlateY = boxY - 14;
+
+      const namePlate = this.add.graphics();
+      namePlate.fillStyle(0x122447, 0.98);
+      namePlate.fillRoundedRect(namePlateX, namePlateY, namePlateW, namePlateH, 8);
+      namePlate.lineStyle(1, 0x7bc3ff, 0.9);
+      namePlate.strokeRoundedRect(namePlateX, namePlateY, namePlateW, namePlateH, 8);
+      container.add(namePlate);
+
+      this.dialogueName = this.add.text(namePlateX + 10, namePlateY + 5, "", {
+        fontFamily: "\"Press Start 2P\", \"VT323\", monospace",
+        fontSize: "10px",
+        color: "#ffe9a8",
+      });
+
+      this.dialogueText = this.add.text(boxX + 18, boxY + 16, "", {
+        fontFamily: "\"VT323\", \"Press Start 2P\", monospace",
+        fontSize: "20px",
+        color: "#e6f1ff",
+        wordWrap: { width: boxW - 36 },
+        lineSpacing: 6,
+      });
+
+      this.dialogueHint = this.add
+        .text(boxX + boxW - 18, boxY + boxH - 12, "click / space", {
+          fontFamily: "\"Press Start 2P\", \"VT323\", monospace",
+          fontSize: "8px",
+          color: "#9fc3ff",
+        })
+        .setOrigin(1, 1);
+
+      container.add([this.dialogueName, this.dialogueText, this.dialogueHint]);
+
+      this.tweens.add({
+        targets: this.dialogueHint,
+        alpha: 0.2,
+        duration: 650,
+        yoyo: true,
+        repeat: -1,
+      });
+
+      const portraitSize = 90;
+      const frameSize = 104;
+
+      this.barronPortrait = this.createPortraitPanel({
+        key: "barron-portrait",
+        label: "B",
+        x: 18,
+        y: HEIGHT - 18,
+        anchorX: 0,
+        anchorY: 1,
+        frameSize,
+        portraitSize,
+      });
+
+      this.ninaPortrait = this.createPortraitPanel({
+        key: "nina-portrait",
+        label: "N",
+        x: WIDTH - 18,
+        y: 18,
+        anchorX: 1,
+        anchorY: 0,
+        frameSize,
+        portraitSize,
+      });
+
+      container.add(this.barronPortrait.container);
+      container.add(this.ninaPortrait.container);
+
+      return container;
+    }
+
+    createPortraitPanel({ key, label, x, y, anchorX, anchorY, frameSize, portraitSize }) {
+      const container = this.add.container(0, 0);
+      const panel = this.add.graphics();
+      panel.fillGradientStyle(0x111f3a, 0x111f3a, 0x1a2f57, 0x1a2f57, 1);
+      panel.fillRoundedRect(0, 0, frameSize, frameSize, 14);
+      panel.lineStyle(2, 0x7bc3ff, 0.9);
+      panel.strokeRoundedRect(0, 0, frameSize, frameSize, 14);
+      panel.lineStyle(1, 0x223a6b, 1);
+      panel.strokeRoundedRect(4, 4, frameSize - 8, frameSize - 8, 12);
+
+      let image = null;
+      let initials = null;
+      if (this.textures.exists(key)) {
+        image = this.add.image(frameSize / 2, frameSize / 2, key);
+        image.setDisplaySize(portraitSize, portraitSize);
+      } else {
+        image = this.add.rectangle(
+          frameSize / 2,
+          frameSize / 2,
+          portraitSize,
+          portraitSize,
+          0x162749,
+          1
+        );
+        initials = this.add
+          .text(frameSize / 2, frameSize / 2, label, {
+            fontFamily: "\"Press Start 2P\", \"VT323\", monospace",
+            fontSize: "16px",
+            color: "#cfe2ff",
+          })
+          .setOrigin(0.5);
+      }
+
+      const shine = this.add.graphics();
+      shine.fillStyle(0xffffff, 0.08);
+      shine.fillRoundedRect(6, 6, frameSize - 12, frameSize / 2 - 6, 12);
+
+      container.add([panel, image, shine]);
+      if (initials) container.add(initials);
+
+      const posX = anchorX === 1 ? x - frameSize : x;
+      const posY = anchorY === 1 ? y - frameSize : y;
+      container.setPosition(posX, posY);
+
+      return { container, image };
+    }
+
+    createTransitionCard() {
+      const container = this.add.container(0, 0);
+      container.setDepth(22);
+      container.setVisible(false);
+
+      const overlay = this.add.rectangle(0, 0, WIDTH, HEIGHT, 0x04060d, 0.7).setOrigin(0, 0);
+
+      const cardW = 360;
+      const cardH = 120;
+      const cardX = (WIDTH - cardW) / 2;
+      const cardY = (HEIGHT - cardH) / 2;
+
+      const card = this.add.graphics();
+      card.fillGradientStyle(0x0f223b, 0x0f223b, 0x1c4f5c, 0x1c4f5c, 1);
+      card.fillRoundedRect(cardX, cardY, cardW, cardH, 14);
+      card.lineStyle(2, 0x7bc3ff, 0.95);
+      card.strokeRoundedRect(cardX, cardY, cardW, cardH, 14);
+      card.lineStyle(1, 0x2a5d72, 1);
+      card.strokeRoundedRect(cardX + 4, cardY + 4, cardW - 8, cardH - 8, 12);
+
+      const title = this.add
+        .text(WIDTH / 2, cardY + 26, "NEXT LEVEL", {
+          fontFamily: "\"Press Start 2P\", \"VT323\", monospace",
+          fontSize: "10px",
+          color: "#ffe9a8",
         })
         .setOrigin(0.5);
 
-      const container = this.add.container(0, 0, [bg, text]);
-      container.setDepth(10);
-      container.setVisible(false);
+      const subtitle = this.add
+        .text(WIDTH / 2, cardY + 64, "Florida", {
+          fontFamily: "\"VT323\", \"Press Start 2P\", monospace",
+          fontSize: "34px",
+          color: "#e6f1ff",
+        })
+        .setOrigin(0.5);
+
+      const hint = this.add
+        .text(WIDTH / 2, cardY + cardH - 14, "click to replay", {
+          fontFamily: "\"Press Start 2P\", \"VT323\", monospace",
+          fontSize: "8px",
+          color: "#9fc3ff",
+        })
+        .setOrigin(0.5, 1);
+
+      this.tweens.add({
+        targets: hint,
+        alpha: 0.2,
+        duration: 650,
+        yoyo: true,
+        repeat: -1,
+      });
+
+      container.add([overlay, card, title, subtitle, hint]);
       return container;
+    }
+
+    startDialogue() {
+      this.dialogueActive = true;
+      this.transitionActive = false;
+      if (this.transitionCard) this.transitionCard.setVisible(false);
+      this.pointerDown = false;
+      this.dialogueIndex = 0;
+      this.dialogueContainer.setVisible(true);
+      if (this.raccoonTimer) this.raccoonTimer.paused = true;
+      this.setDialogueLine(this.dialogueIndex);
+    }
+
+    updateDialogueInput() {
+      const advancePressed =
+        Phaser.Input.Keyboard.JustDown(this.keys.space) ||
+        Phaser.Input.Keyboard.JustDown(this.keys.enter);
+      if (advancePressed) {
+        this.advanceDialogue();
+      }
+    }
+
+    setDialogueLine(index) {
+      const line = this.dialogueLines[index];
+      if (!line) return;
+
+      this.dialogueName.setText(line.speaker);
+      this.dialogueFullText = line.text;
+      this.dialogueText.setText("");
+      this.dialogueHint.setVisible(false);
+
+      const isBarron = line.speaker === "Barron";
+      this.setPortraitActive(this.barronPortrait, isBarron);
+      this.setPortraitActive(this.ninaPortrait, !isBarron);
+
+      if (this.dialogueTypingTimer) {
+        this.dialogueTypingTimer.remove();
+      }
+
+      this.dialogueTypingIndex = 0;
+      this.dialogueTypingTimer = this.time.addEvent({
+        delay: 18,
+        loop: true,
+        callback: () => {
+          this.dialogueTypingIndex += 1;
+          this.dialogueText.setText(this.dialogueFullText.slice(0, this.dialogueTypingIndex));
+          if (this.dialogueTypingIndex >= this.dialogueFullText.length) {
+            this.dialogueTypingTimer.remove();
+            this.dialogueTypingTimer = null;
+            this.dialogueHint.setVisible(true);
+          }
+        },
+      });
+    }
+
+    setPortraitActive(portrait, active) {
+      if (!portrait) return;
+      portrait.container.setAlpha(active ? 1 : 0.45);
+      portrait.container.setScale(active ? 1 : 0.97);
+    }
+
+    advanceDialogue() {
+      if (this.time.now < this.dialogueAdvanceAt) return;
+      this.dialogueAdvanceAt = this.time.now + 140;
+
+      if (this.transitionActive) {
+        this.restartGame();
+        return;
+      }
+
+      if (this.dialogueTypingTimer) {
+        this.dialogueTypingTimer.remove();
+        this.dialogueTypingTimer = null;
+        this.dialogueText.setText(this.dialogueFullText);
+        this.dialogueHint.setVisible(true);
+        return;
+      }
+
+      if (!this.dialogueActive) return;
+
+      this.dialogueIndex += 1;
+      if (this.dialogueIndex >= this.dialogueLines.length) {
+        this.finishDialogue();
+        return;
+      }
+      this.setDialogueLine(this.dialogueIndex);
+    }
+
+    finishDialogue() {
+      this.dialogueActive = false;
+      this.dialogueContainer.setVisible(false);
+      this.transitionActive = true;
+      this.transitionCard.setVisible(true);
     }
 
     createGameOverText() {
       return this.add
         .text(WIDTH / 2, HEIGHT / 2, "Raccoon got you!", {
-          fontFamily: "Arial, sans-serif",
-          fontSize: "18px",
+          fontFamily: "\"Press Start 2P\", \"VT323\", monospace",
+          fontSize: "16px",
           color: "#ffe6e6",
           align: "center",
         })
@@ -594,8 +897,8 @@
 
       const text = this.add
         .text(buttonWidth / 2, buttonHeight / 2, "Restart", {
-          fontFamily: "Arial, sans-serif",
-          fontSize: "14px",
+          fontFamily: "\"VT323\", \"Press Start 2P\", monospace",
+          fontSize: "18px",
           color: "#e6eefc",
         })
         .setOrigin(0.5);
