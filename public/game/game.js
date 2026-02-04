@@ -82,7 +82,7 @@
         frameHeight: 64,
       });
       this.load.spritesheet("snowball", asset("snowball-projectile.png"), {
-        frameWidth: 18,
+        frameWidth: 36,
         frameHeight: 10,
       });
       this.load.audio(
@@ -161,7 +161,7 @@
       });
       this.anims.create({
         key: "snowball-fly",
-        frames: this.anims.generateFrameNumbers("snowball", { start: 0, end: 5 }),
+        frames: this.anims.generateFrameNumbers("snowball", { start: 0, end: 2 }),
         frameRate: 12,
         repeat: -1,
       });
