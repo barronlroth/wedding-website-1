@@ -570,6 +570,23 @@
       bindBtn(jumpBtn, "touchJump");
       bindBtn(throwBtn, "touchThrow");
 
+      // Fullscreen button (top-right)
+      const fsBg = this.add.graphics();
+      fsBg.fillStyle(0x000000, 0.5);
+      fsBg.fillRoundedRect(0, 0, 80, 28, 8);
+      const fsTxt = this.add.text(40, 14, "⛶ PLAY", {
+        fontFamily: "Arial, sans-serif",
+        fontSize: "12px",
+        color: "#ffffff",
+        fontStyle: "bold",
+      }).setOrigin(0.5);
+      const fsBtn = this.add.container(WIDTH - 88, 8, [fsBg, fsTxt]).setDepth(depth);
+      fsBtn.setSize(80, 28);
+      fsBtn.setInteractive();
+      fsBtn.on("pointerdown", () => {
+        this.scale.startFullscreen();
+      });
+
       // Track jump/throw edge detection for touch
       this._prevTouchJump = false;
       this._prevTouchThrow = false;
@@ -670,6 +687,10 @@
     scale: {
       mode: Phaser.Scale.FIT,
       autoCenter: Phaser.Scale.CENTER_BOTH,
+      fullscreenTarget: "game",
+    },
+    input: {
+      activePointers: 3,
     },
     scene: [MeetingScene],
   };
