@@ -16,16 +16,20 @@ const HowWeMet: React.FC = () => {
         </div>
       </div>
 
-      {/* Controls hint */}
-      <p className="mt-4 text-stone-400 text-sm tracking-wide text-center font-light">
+      {/* Controls hint — desktop */}
+      <p className="mt-4 text-stone-400 text-sm tracking-wide text-center font-light hidden md:block">
         <span className="inline-block px-2 py-0.5 bg-stone-100 rounded text-stone-500 text-xs font-mono mr-1">→</span> walk
         <span className="mx-2 text-stone-300">·</span>
         <span className="inline-block px-2 py-0.5 bg-stone-100 rounded text-stone-500 text-xs font-mono mr-1">↑</span> jump
         <span className="mx-2 text-stone-300">·</span>
         <span className="inline-block px-2 py-0.5 bg-stone-100 rounded text-stone-500 text-xs font-mono mr-1">space</span> throw snowballs
       </p>
+      {/* Controls hint — mobile */}
+      <p className="mt-4 text-stone-400 text-sm tracking-wide text-center font-light md:hidden">
+        Use the on-screen controls · Rotate for best experience
+      </p>
       <p className="mt-1 text-stone-400 text-xs tracking-wide text-center font-light">
-        Click the game to start · Best on desktop
+        Tap the game to start
       </p>
     </div>
   );
