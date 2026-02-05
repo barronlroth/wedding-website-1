@@ -101,8 +101,8 @@
         frameHeight: 64,
       });
       this.load.spritesheet("snowball", asset("snowball-projectile.png"), {
-        frameWidth: 36,
-        frameHeight: 10,
+        frameWidth: 256,
+        frameHeight: 256,
       });
       this.load.image("barron-portrait", asset("portraits/barron-portrait-1.png"));
       this.load.image("nina-portrait", asset("portraits/nina-portrait-1.png"));
@@ -180,7 +180,8 @@
         frameRate: 10,
         repeat: -1,
       });
-      // Snowball lifecycle: frame 0 = intact, frame 1 = streaking, frame 2 = splatter
+      // Snowball lifecycle (5 frames @ 256×256):
+      // frame 0 = intact, frame 1 = streaking, frame 2 = impact, frame 3 = splatter, frame 4 = dissipate
 
       this.gameOverText = this.createGameOverText();
       this.dialogueContainer = this.createDialogueUI();
@@ -266,7 +267,8 @@
     update(_time, delta) {
       const dt = delta / 1000;
 
-      this.updateSnow(dt);
+      this.updateSnow(dt, this.lastScrollDx || 0);
+      this.lastScrollDx = 0;
 
       if (this.dialogueActive || this.transitionActive) {
         this.updateDialogueInput();
@@ -355,12 +357,20 @@
       this.horizon.tilePositionX += dx * 0.3;
       this.near.tilePositionX += dx * 0.6;
       this.floor.tilePositionX += dx;
+      this.lastScrollDx = dx;
     }
 
-    updateSnow(dt) {
+    updateSnow(dt, dx) {
       for (const flake of this.snowflakes) {
         flake.sprite.y += flake.speed * dt;
         flake.sprite.x += flake.drift * dt;
+
+        // Parallax: snow drifts opposite to camera based on its fall speed
+        // Slower flakes = further away = less parallax, faster = closer = more
+        if (dx) {
+          const parallaxFactor = 0.3 + (flake.speed / 60) * 0.5; // 0.3–0.8 range
+          flake.sprite.x -= dx * parallaxFactor;
+        }
 
         if (flake.sprite.y > HEIGHT + 4) {
           flake.sprite.y = -4;
@@ -395,6 +405,7 @@
       const spawnX = this.barron.x + this.facing * 12;
       const spawnY = this.barron.y - 26;
       const sprite = this.add.sprite(spawnX, spawnY, "snowball").setDepth(8);
+      sprite.setScale(0.35);
       sprite.setFrame(0);
       sprite.setFlipX(this.facing < 0);
       // Transition to streaking frame after brief launch
@@ -415,13 +426,29 @@
         snowball.sprite.x += snowball.vx * dt;
         snowball.sprite.y += snowball.vy * dt;
 
+        // Off-screen left/right — just remove
         if (
           snowball.sprite.x < -20 ||
-          snowball.sprite.x > WIDTH + 20 ||
-          snowball.sprite.y > HEIGHT + 20
+          snowball.sprite.x > WIDTH + 20
         ) {
           snowball.sprite.destroy();
           this.snowballs.splice(i, 1);
+          continue;
+        }
+
+        // Hit the ground — play splatter and destroy
+        if (snowball.sprite.y >= GROUND_Y) {
+          snowball.sprite.y = GROUND_Y;
+          snowball.sprite.setFrame(2);
+          const splatSprite = snowball.sprite;
+          this.snowballs.splice(i, 1);
+          this.time.delayedCall(80, () => {
+            if (splatSprite.active) splatSprite.setFrame(3);
+            this.time.delayedCall(80, () => {
+              if (splatSprite.active) splatSprite.setFrame(4);
+              this.time.delayedCall(80, () => splatSprite.destroy());
+            });
+          });
           continue;
         }
 
@@ -429,12 +456,18 @@
           const raccoon = this.raccoons[j];
           if (!raccoon.alive) continue;
           if (Phaser.Geom.Intersects.RectangleToRectangle(snowball.sprite.getBounds(), this.raccoonBounds(raccoon.sprite))) {
-            // Show splatter frame, then destroy
+            // Show splatter sequence: impact → splatter → dissipate → destroy
             snowball.sprite.setFrame(2);
             snowball.sprite.body && (snowball.sprite.body.enable = false);
             const splatSprite = snowball.sprite;
             this.snowballs.splice(i, 1);
-            this.time.delayedCall(120, () => splatSprite.destroy());
+            this.time.delayedCall(80, () => {
+              if (splatSprite.active) splatSprite.setFrame(3);
+              this.time.delayedCall(80, () => {
+                if (splatSprite.active) splatSprite.setFrame(4);
+                this.time.delayedCall(80, () => splatSprite.destroy());
+              });
+            });
             this.killRaccoon(j);
             break;
           }
@@ -485,8 +518,40 @@
       const raccoon = this.raccoons[index];
       if (!raccoon) return;
       raccoon.alive = false;
-      raccoon.sprite.destroy();
       this.raccoons.splice(index, 1);
+
+      const sprite = raccoon.sprite;
+      sprite.anims.stop();
+
+      // Blood spatter particles
+      for (let i = 0; i < 8; i += 1) {
+        const bx = sprite.x + Phaser.Math.Between(-10, 10);
+        const by = sprite.y + Phaser.Math.Between(-8, 4);
+        const blood = this.add.circle(bx, by, Phaser.Math.Between(2, 5), 0xcc1111, 1).setDepth(7);
+        this.tweens.add({
+          targets: blood,
+          x: bx + Phaser.Math.Between(-30, 30),
+          y: by + Phaser.Math.Between(-40, -5),
+          alpha: 0,
+          scaleX: 0.3,
+          scaleY: 0.3,
+          duration: Phaser.Math.Between(300, 600),
+          ease: "Power2",
+          onComplete: () => blood.destroy(),
+        });
+      }
+
+      // Flip upside-down and fall through ground
+      sprite.setFlipY(true);
+      this.tweens.add({
+        targets: sprite,
+        y: sprite.y + 120,
+        angle: Phaser.Math.Between(-45, 45),
+        alpha: 0,
+        duration: 800,
+        ease: "Power1",
+        onComplete: () => sprite.destroy(),
+      });
     }
 
     damagePlayer() {
