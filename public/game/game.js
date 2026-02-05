@@ -518,8 +518,40 @@
       const raccoon = this.raccoons[index];
       if (!raccoon) return;
       raccoon.alive = false;
-      raccoon.sprite.destroy();
       this.raccoons.splice(index, 1);
+
+      const sprite = raccoon.sprite;
+      sprite.anims.stop();
+
+      // Blood spatter particles
+      for (let i = 0; i < 8; i += 1) {
+        const bx = sprite.x + Phaser.Math.Between(-10, 10);
+        const by = sprite.y + Phaser.Math.Between(-8, 4);
+        const blood = this.add.circle(bx, by, Phaser.Math.Between(2, 5), 0xcc1111, 1).setDepth(7);
+        this.tweens.add({
+          targets: blood,
+          x: bx + Phaser.Math.Between(-30, 30),
+          y: by + Phaser.Math.Between(-40, -5),
+          alpha: 0,
+          scaleX: 0.3,
+          scaleY: 0.3,
+          duration: Phaser.Math.Between(300, 600),
+          ease: "Power2",
+          onComplete: () => blood.destroy(),
+        });
+      }
+
+      // Flip upside-down and fall through ground
+      sprite.setFlipY(true);
+      this.tweens.add({
+        targets: sprite,
+        y: sprite.y + 120,
+        angle: Phaser.Math.Between(-45, 45),
+        alpha: 0,
+        duration: 800,
+        ease: "Power1",
+        onComplete: () => sprite.destroy(),
+      });
     }
 
     damagePlayer() {
