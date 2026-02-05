@@ -396,7 +396,7 @@
       const spawnX = this.barron.x + this.facing * 12;
       const spawnY = this.barron.y - 26;
       const sprite = this.add.sprite(spawnX, spawnY, "snowball").setDepth(8);
-      sprite.setScale(0.25);
+      sprite.setScale(0.35);
       sprite.setFrame(0);
       sprite.setFlipX(this.facing < 0);
       // Transition to streaking frame after brief launch
