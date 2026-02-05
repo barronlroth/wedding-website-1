@@ -6,6 +6,11 @@ export const VENUE_NAME = "Villa Woodbine";
 export const VENUE_ADDRESS = "2167 S Bayshore Dr, Miami, FL 33133";
 export const LOCATION = "Coconut Grove, Miami";
 
+// External service URLs
+export const WITHJOY_URL = "https://withjoy.com/barron-and-nina";
+export const WITHJOY_RSVP_URL = "https://withjoy.com/barron-and-nina/rsvp";
+export const ZOLA_REGISTRY_URL = "https://www.zola.com/registry/barronandnina"; // TODO: Set up Zola account
+
 export const NAV_ITEMS: NavItem[] = [
   { label: "Our Story", href: "#story" },
   { label: "The Wedding", href: "#details" },
