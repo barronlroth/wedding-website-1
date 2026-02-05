@@ -106,6 +106,8 @@
       });
       this.load.image("barron-portrait", asset("portraits/barron-portrait-1.png"));
       this.load.image("nina-portrait", asset("portraits/nina-portrait-1.png"));
+      this.load.image("barron-portrait-2", asset("portraits/barron-portrait-2.jpg"));
+      this.load.image("nina-portrait-2", asset("portraits/nina-portrait-2.jpg"));
       this.load.audio(
         "bgm",
         [
@@ -650,10 +652,22 @@
       const overlay = this.add.rectangle(0, 0, WIDTH, HEIGHT, 0x05070f, 0.58).setOrigin(0, 0);
       container.add(overlay);
 
-      const boxX = 24;
-      const boxW = WIDTH - 48;
-      const boxH = 94;
+      const portraitSize = 180;
+      const frameSize = 196;
+      const portraitOffset = 8;
+      const leftPortraitX = -portraitOffset;
+      const rightPortraitX = WIDTH + portraitOffset;
+      const leftPortraitRight = leftPortraitX + frameSize;
+      const rightPortraitLeft = rightPortraitX - frameSize;
+      const gapWidth = rightPortraitLeft - leftPortraitRight;
+
+      const boxW = Math.min(WIDTH - 48, gapWidth - 16);
+      const boxH = 120;
+      const boxX = (WIDTH - boxW) / 2;
       const boxY = (HEIGHT - boxH) / 2;
+      const textX = boxX + 18;
+      const textWidth = boxW - 36;
+      const textMaxX = boxX + boxW - 18;
 
       const box = this.add.graphics();
       box.fillGradientStyle(0x0d1a33, 0x0d1a33, 0x152a54, 0x152a54, 1);
@@ -664,9 +678,9 @@
       box.strokeRoundedRect(boxX + 4, boxY + 4, boxW - 8, boxH - 8, 10);
       container.add(box);
 
-      const namePlateW = 148;
+      const namePlateW = Math.min(148, textWidth);
       const namePlateH = 22;
-      const namePlateX = boxX + 16;
+      const namePlateX = textX;
       const namePlateY = boxY - 14;
 
       const namePlate = this.add.graphics();
@@ -682,16 +696,16 @@
         color: "#ffe9a8",
       });
 
-      this.dialogueText = this.add.text(boxX + 18, boxY + 16, "", {
+      this.dialogueText = this.add.text(textX, boxY + 18, "", {
         fontFamily: "\"VT323\", \"Press Start 2P\", monospace",
         fontSize: "20px",
         color: "#e6f1ff",
-        wordWrap: { width: boxW - 36 },
+        wordWrap: { width: textWidth },
         lineSpacing: 6,
       });
 
       this.dialogueHint = this.add
-        .text(boxX + boxW - 18, boxY + boxH - 12, "click / space", {
+        .text(textMaxX, boxY + boxH - 12, "click / space", {
           fontFamily: "\"Press Start 2P\", \"VT323\", monospace",
           fontSize: "8px",
           color: "#9fc3ff",
@@ -708,13 +722,10 @@
         repeat: -1,
       });
 
-      const portraitSize = 90;
-      const frameSize = 104;
-
       this.barronPortrait = this.createPortraitPanel({
-        key: "barron-portrait",
+        key: "barron-portrait-2",
         label: "B",
-        x: 18,
+        x: leftPortraitX,
         y: HEIGHT - 18,
         anchorX: 0,
         anchorY: 1,
@@ -723,9 +734,9 @@
       });
 
       this.ninaPortrait = this.createPortraitPanel({
-        key: "nina-portrait",
+        key: "nina-portrait-2",
         label: "N",
-        x: WIDTH - 18,
+        x: rightPortraitX,
         y: 18,
         anchorX: 1,
         anchorY: 0,
