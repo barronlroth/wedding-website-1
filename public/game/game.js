@@ -101,8 +101,8 @@
         frameHeight: 64,
       });
       this.load.spritesheet("snowball", asset("snowball-projectile.png"), {
-        frameWidth: 36,
-        frameHeight: 10,
+        frameWidth: 256,
+        frameHeight: 256,
       });
       this.load.image("barron-portrait", asset("portraits/barron-portrait-1.png"));
       this.load.image("nina-portrait", asset("portraits/nina-portrait-1.png"));
@@ -180,7 +180,8 @@
         frameRate: 10,
         repeat: -1,
       });
-      // Snowball lifecycle: frame 0 = intact, frame 1 = streaking, frame 2 = splatter
+      // Snowball lifecycle (5 frames @ 256×256):
+      // frame 0 = intact, frame 1 = streaking, frame 2 = impact, frame 3 = splatter, frame 4 = dissipate
 
       this.gameOverText = this.createGameOverText();
       this.dialogueContainer = this.createDialogueUI();
@@ -395,6 +396,7 @@
       const spawnX = this.barron.x + this.facing * 12;
       const spawnY = this.barron.y - 26;
       const sprite = this.add.sprite(spawnX, spawnY, "snowball").setDepth(8);
+      sprite.setScale(0.15);
       sprite.setFrame(0);
       sprite.setFlipX(this.facing < 0);
       // Transition to streaking frame after brief launch
@@ -429,12 +431,18 @@
           const raccoon = this.raccoons[j];
           if (!raccoon.alive) continue;
           if (Phaser.Geom.Intersects.RectangleToRectangle(snowball.sprite.getBounds(), this.raccoonBounds(raccoon.sprite))) {
-            // Show splatter frame, then destroy
+            // Show splatter sequence: impact → splatter → dissipate → destroy
             snowball.sprite.setFrame(2);
             snowball.sprite.body && (snowball.sprite.body.enable = false);
             const splatSprite = snowball.sprite;
             this.snowballs.splice(i, 1);
-            this.time.delayedCall(120, () => splatSprite.destroy());
+            this.time.delayedCall(80, () => {
+              if (splatSprite.active) splatSprite.setFrame(3);
+              this.time.delayedCall(80, () => {
+                if (splatSprite.active) splatSprite.setFrame(4);
+                this.time.delayedCall(80, () => splatSprite.destroy());
+              });
+            });
             this.killRaccoon(j);
             break;
           }
