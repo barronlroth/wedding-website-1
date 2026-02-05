@@ -417,13 +417,29 @@
         snowball.sprite.x += snowball.vx * dt;
         snowball.sprite.y += snowball.vy * dt;
 
+        // Off-screen left/right — just remove
         if (
           snowball.sprite.x < -20 ||
-          snowball.sprite.x > WIDTH + 20 ||
-          snowball.sprite.y > HEIGHT + 20
+          snowball.sprite.x > WIDTH + 20
         ) {
           snowball.sprite.destroy();
           this.snowballs.splice(i, 1);
+          continue;
+        }
+
+        // Hit the ground — play splatter and destroy
+        if (snowball.sprite.y >= GROUND_Y) {
+          snowball.sprite.y = GROUND_Y;
+          snowball.sprite.setFrame(2);
+          const splatSprite = snowball.sprite;
+          this.snowballs.splice(i, 1);
+          this.time.delayedCall(80, () => {
+            if (splatSprite.active) splatSprite.setFrame(3);
+            this.time.delayedCall(80, () => {
+              if (splatSprite.active) splatSprite.setFrame(4);
+              this.time.delayedCall(80, () => splatSprite.destroy());
+            });
+          });
           continue;
         }
 
