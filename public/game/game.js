@@ -267,7 +267,8 @@
     update(_time, delta) {
       const dt = delta / 1000;
 
-      this.updateSnow(dt);
+      this.updateSnow(dt, this.lastScrollDx || 0);
+      this.lastScrollDx = 0;
 
       if (this.dialogueActive || this.transitionActive) {
         this.updateDialogueInput();
@@ -356,12 +357,20 @@
       this.horizon.tilePositionX += dx * 0.3;
       this.near.tilePositionX += dx * 0.6;
       this.floor.tilePositionX += dx;
+      this.lastScrollDx = dx;
     }
 
-    updateSnow(dt) {
+    updateSnow(dt, dx) {
       for (const flake of this.snowflakes) {
         flake.sprite.y += flake.speed * dt;
         flake.sprite.x += flake.drift * dt;
+
+        // Parallax: snow drifts opposite to camera based on its fall speed
+        // Slower flakes = further away = less parallax, faster = closer = more
+        if (dx) {
+          const parallaxFactor = 0.3 + (flake.speed / 60) * 0.5; // 0.3–0.8 range
+          flake.sprite.x -= dx * parallaxFactor;
+        }
 
         if (flake.sprite.y > HEIGHT + 4) {
           flake.sprite.y = -4;
