@@ -10,8 +10,8 @@ export const NAV_ITEMS: NavItem[] = [
   { label: "Our Story", href: "#story" },
   { label: "The Wedding", href: "#details" },
   { label: "Travel", href: "#travel" },
-  { label: "Registry", href: "#registry" },
-  { label: "RSVP", href: "#rsvp" },
+  // HIDDEN: { label: "Registry", href: "#registry" },
+  // HIDDEN: { label: "RSVP", href: "#rsvp" },
 ];
 
 export const TIMELINE: TimelineEvent[] = [
