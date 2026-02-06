@@ -20,7 +20,7 @@ const Details: React.FC = () => {
         <h3 className="font-serif text-3xl text-stone-800 mb-2">{VENUE_NAME}</h3>
         <p className="text-stone-500 font-light mb-8 max-w-md">{VENUE_ADDRESS}</p>
         <img 
-          src="https://images.unsplash.com/photo-1527529482837-4698179dc6ce?q=80&w=2670&auto=format&fit=crop"
+          src="/images/villa-woodbine.jpg"
           alt="Villa Woodbine" 
           className="w-full max-w-4xl h-80 md:h-96 object-cover rounded-sm shadow-xl mb-8"
         />
@@ -33,7 +33,8 @@ const Details: React.FC = () => {
         </div>
       </div>
 
-      {/* Timeline */}
+      {/* Timeline - HIDDEN (not deleted, can be restored) */}
+      {false && (
       <div className="max-w-3xl mx-auto">
         <h3 className="font-serif text-2xl text-center mb-12">Order of Events</h3>
         <div className="relative border-l border-sage-300 ml-4 md:ml-0 md:pl-0 space-y-12">
@@ -62,6 +63,7 @@ const Details: React.FC = () => {
           ))}
         </div>
       </div>
+      )}
     </Section>
   );
 };

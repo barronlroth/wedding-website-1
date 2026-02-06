@@ -17,8 +17,10 @@ function App() {
       <OurStory />
       <Details />
       <Travel />
-      <Registry />
-      <RSVP />
+      {/* Registry - HIDDEN */}
+      {false && <Registry />}
+      {/* RSVP - HIDDEN */}
+      {false && <RSVP />}
       <Footer />
       <Concierge />
     </div>

@@ -4,9 +4,19 @@ import { WEDDING_DATE, LOCATION } from '../constants';
 const Hero: React.FC = () => {
   return (
     <section className="relative h-screen min-h-[600px] flex items-center justify-center overflow-hidden">
-      {/* Background Image */}
+      {/* Background Image - Mobile */}
       <div 
-        className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat bg-fixed"
+        className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat md:hidden"
+        style={{
+          backgroundImage: 'url("/images/hero-mobile.jpg")',
+        }}
+      >
+        <div className="absolute inset-0 bg-black/20" /> {/* Overlay */}
+      </div>
+      
+      {/* Background Image - Desktop */}
+      <div 
+        className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat bg-fixed hidden md:block"
         style={{
           backgroundImage: 'url("/images/hero.jpg")',
         }}
@@ -16,9 +26,11 @@ const Hero: React.FC = () => {
 
       {/* Content */}
       <div className="relative z-10 text-center text-white px-4 animate-fade-in-up">
+{/* HIDDEN: "We are getting married" text
         <p className="text-sm md:text-base tracking-[0.3em] uppercase mb-4 opacity-90">
           We are getting married
         </p>
+*/}
         <h1 className="font-serif text-5xl md:text-7xl lg:text-9xl mb-6 tracking-tight">
           Barron <span className="italic font-light text-sage-200 mx-2">&</span> Nina
         </h1>
