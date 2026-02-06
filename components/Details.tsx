@@ -33,7 +33,8 @@ const Details: React.FC = () => {
         </div>
       </div>
 
-      {/* Timeline */}
+      {/* Timeline - HIDDEN (not deleted, can be restored) */}
+      {false && (
       <div className="max-w-3xl mx-auto">
         <h3 className="font-serif text-2xl text-center mb-12">Order of Events</h3>
         <div className="relative border-l border-sage-300 ml-4 md:ml-0 md:pl-0 space-y-12">
@@ -62,6 +63,7 @@ const Details: React.FC = () => {
           ))}
         </div>
       </div>
+      )}
     </Section>
   );
 };
