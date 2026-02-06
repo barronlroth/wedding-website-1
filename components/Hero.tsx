@@ -4,9 +4,19 @@ import { WEDDING_DATE, LOCATION } from '../constants';
 const Hero: React.FC = () => {
   return (
     <section className="relative h-screen min-h-[600px] flex items-center justify-center overflow-hidden">
-      {/* Background Image */}
+      {/* Background Image - Mobile */}
       <div 
-        className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat bg-fixed"
+        className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat md:hidden"
+        style={{
+          backgroundImage: 'url("/images/hero-mobile.jpg")',
+        }}
+      >
+        <div className="absolute inset-0 bg-black/20" /> {/* Overlay */}
+      </div>
+      
+      {/* Background Image - Desktop */}
+      <div 
+        className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat bg-fixed hidden md:block"
         style={{
           backgroundImage: 'url("/images/hero.jpg")',
         }}
