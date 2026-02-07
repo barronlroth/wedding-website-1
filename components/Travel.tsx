@@ -30,10 +30,11 @@ const Travel: React.FC = () => {
       {/* Hotels */}
       <div className="text-center mb-12">
         <h3 className="font-serif text-2xl mb-6">Accommodations</h3>
-        <p className="text-stone-500 mb-10 max-w-2xl mx-auto">
-          We have secured room blocks at the following hotels. Please mention the Roth Wedding when booking.
+        <p className="text-stone-500 mb-10 max-w-2xl mx-auto italic">
+          Room block information coming soon.
         </p>
         
+        {/* HIDDEN: Hotel cards - will restore once room blocks are confirmed
         <div className="grid md:grid-cols-3 gap-6">
           {HOTELS.map((hotel, index) => (
             <a 
@@ -54,6 +55,7 @@ const Travel: React.FC = () => {
             </a>
           ))}
         </div>
+        */}
       </div>
     </Section>
   );
