@@ -52,7 +52,80 @@
     },
   ];
 
+  class TitleScene extends Phaser.Scene {
+    constructor() {
+      super({ key: "TitleScene" });
+    }
+
+    preload() {
+      this.load.image("far", asset("far-bg.png"));
+    }
+
+    create() {
+      // Background
+      this.add.tileSprite(0, 0, WIDTH, HEIGHT, "far").setOrigin(0, 0);
+      this.add
+        .rectangle(0, 0, WIDTH, HEIGHT, 0x0b0f1a, 0.55)
+        .setOrigin(0, 0);
+
+      // Title
+      this.add
+        .text(WIDTH / 2, HEIGHT * 0.32, "How We Met", {
+          fontFamily: '"Press Start 2P", monospace',
+          fontSize: "28px",
+          color: "#e6eefc",
+          stroke: "#1a2744",
+          strokeThickness: 4,
+        })
+        .setOrigin(0.5);
+
+      // Subtitle
+      this.add
+        .text(WIDTH / 2, HEIGHT * 0.48, "A Barron & Nina Story", {
+          fontFamily: '"VT323", monospace',
+          fontSize: "18px",
+          color: "#8ab4f8",
+        })
+        .setOrigin(0.5);
+
+      // Blinking "Tap to Start" text
+      const startText = this.add
+        .text(WIDTH / 2, HEIGHT * 0.72, "Tap to Start", {
+          fontFamily: '"Press Start 2P", monospace',
+          fontSize: "14px",
+          color: "#ffffff",
+        })
+        .setOrigin(0.5);
+
+      this.tweens.add({
+        targets: startText,
+        alpha: 0.2,
+        duration: 800,
+        yoyo: true,
+        repeat: -1,
+        ease: "Sine.easeInOut",
+      });
+
+      // Entire screen is the tap target
+      this.input.on("pointerdown", () => {
+        this.scene.start("MeetingScene");
+      });
+
+      // Also support Enter / Space on desktop
+      this.input.keyboard.on("keydown-ENTER", () => {
+        this.scene.start("MeetingScene");
+      });
+      this.input.keyboard.on("keydown-SPACE", () => {
+        this.scene.start("MeetingScene");
+      });
+    }
+  }
+
   class MeetingScene extends Phaser.Scene {
+    constructor() {
+      super({ key: "MeetingScene" });
+    }
+
     preload() {
       const { width, height } = this.scale;
       const barWidth = 300;
@@ -1178,7 +1251,7 @@
       mode: Phaser.Scale.FIT,
       autoCenter: Phaser.Scale.CENTER_BOTH,
     },
-    scene: [MeetingScene],
+    scene: [TitleScene, MeetingScene],
   };
 
   new Phaser.Game(config);
