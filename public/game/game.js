@@ -247,13 +247,23 @@
         space: Phaser.Input.Keyboard.KeyCodes.SPACE,
         enter: Phaser.Input.Keyboard.KeyCodes.ENTER,
       });
+      this.isTouchDevice = "ontouchstart" in window || navigator.maxTouchPoints > 0;
+      this.touchLeft = false;
+      this.touchRight = false;
+      this.touchJump = false;
+      this.touchThrow = false;
+      if (this.isTouchDevice) {
+        this.createTouchControls();
+      }
 
       this.input.on("pointerdown", () => {
         if (this.dialogueActive || this.transitionActive) {
           this.advanceDialogue();
           return;
         }
-        this.pointerDown = true;
+        if (!this.isTouchDevice) {
+          this.pointerDown = true;
+        }
       });
       this.input.on("pointerup", () => {
         this.pointerDown = false;
@@ -308,9 +318,12 @@
         this.barron.setFrame(0);
       }
 
+      const touchJumpPressed = this.touchJump;
+      this.touchJump = false;
       const jumpPressed =
         Phaser.Input.Keyboard.JustDown(this.cursors.up) ||
-        Phaser.Input.Keyboard.JustDown(this.keys.w);
+        Phaser.Input.Keyboard.JustDown(this.keys.w) ||
+        touchJumpPressed;
 
       if (!this.gameOver && jumpPressed && this.barronGrounded) {
         this.barronVy = -JUMP_VELOCITY;
@@ -327,7 +340,9 @@
         }
       }
 
-      const throwPressed = Phaser.Input.Keyboard.JustDown(this.keys.space);
+      const touchThrowPressed = this.touchThrow;
+      this.touchThrow = false;
+      const throwPressed = Phaser.Input.Keyboard.JustDown(this.keys.space) || touchThrowPressed;
       if (!this.gameOver && throwPressed) {
         this.throwSnowball();
       }
@@ -342,8 +357,12 @@
 
     getMoveDir() {
       const moveRight =
-        (this.cursors.right && this.cursors.right.isDown) || this.keys.d.isDown || this.pointerDown;
-      const moveLeft = (this.cursors.left && this.cursors.left.isDown) || this.keys.a.isDown;
+        (this.cursors.right && this.cursors.right.isDown) ||
+        this.keys.d.isDown ||
+        this.pointerDown ||
+        this.touchRight;
+      const moveLeft =
+        (this.cursors.left && this.cursors.left.isDown) || this.keys.a.isDown || this.touchLeft;
 
       if (moveRight === moveLeft) {
         return 0;
@@ -352,6 +371,148 @@
       const dir = moveRight ? 1 : -1;
       this.facing = dir;
       return dir;
+    }
+
+    createTouchControls() {
+      this.input.addPointer(2);
+
+      const baseAlpha = 0.25;
+      const activeAlpha = 0.5;
+      const radius = 28;
+      const white = 0xffffff;
+
+      const drawArrowLeft = (g, x, y) => {
+        g.beginPath();
+        g.moveTo(x + 9, y - 10);
+        g.lineTo(x - 9, y);
+        g.lineTo(x + 9, y + 10);
+        g.strokePath();
+        g.beginPath();
+        g.moveTo(x + 11, y);
+        g.lineTo(x - 9, y);
+        g.strokePath();
+      };
+
+      const drawArrowRight = (g, x, y) => {
+        g.beginPath();
+        g.moveTo(x - 9, y - 10);
+        g.lineTo(x + 9, y);
+        g.lineTo(x - 9, y + 10);
+        g.strokePath();
+        g.beginPath();
+        g.moveTo(x - 11, y);
+        g.lineTo(x + 9, y);
+        g.strokePath();
+      };
+
+      const drawArrowUp = (g, x, y) => {
+        g.beginPath();
+        g.moveTo(x - 10, y + 9);
+        g.lineTo(x, y - 9);
+        g.lineTo(x + 10, y + 9);
+        g.strokePath();
+        g.beginPath();
+        g.moveTo(x, y + 11);
+        g.lineTo(x, y - 9);
+        g.strokePath();
+      };
+
+      const drawSnowflake = (g, x, y) => {
+        g.beginPath();
+        g.moveTo(x - 10, y);
+        g.lineTo(x + 10, y);
+        g.strokePath();
+        g.beginPath();
+        g.moveTo(x, y - 10);
+        g.lineTo(x, y + 10);
+        g.strokePath();
+        g.beginPath();
+        g.moveTo(x - 7, y - 7);
+        g.lineTo(x + 7, y + 7);
+        g.strokePath();
+        g.beginPath();
+        g.moveTo(x + 7, y - 7);
+        g.lineTo(x - 7, y + 7);
+        g.strokePath();
+      };
+
+      const createButton = ({ x, y, drawIcon, onPress, onRelease }) => {
+        const button = this.add.graphics();
+        button.fillStyle(white, 1);
+        button.fillCircle(x, y, radius);
+        button.lineStyle(2, white, 0.45);
+        button.strokeCircle(x, y, radius);
+        button.lineStyle(3, white, 0.95);
+        drawIcon(button, x, y);
+        button.setScrollFactor(0);
+        button.setDepth(1000);
+        button.setAlpha(baseAlpha);
+        button.setInteractive({
+          hitArea: new Phaser.Geom.Circle(x, y, radius),
+          hitAreaCallback: Phaser.Geom.Circle.Contains,
+        });
+
+        button.on("pointerdown", () => {
+          onPress();
+          button.setAlpha(activeAlpha);
+        });
+
+        const release = () => {
+          onRelease();
+          button.setAlpha(baseAlpha);
+        };
+
+        button.on("pointerup", release);
+        button.on("pointerout", release);
+        return button;
+      };
+
+      this.touchButtons = {
+        left: createButton({
+          x: 50,
+          y: HEIGHT - 50,
+          drawIcon: drawArrowLeft,
+          onPress: () => {
+            this.touchLeft = true;
+          },
+          onRelease: () => {
+            this.touchLeft = false;
+          },
+        }),
+        right: createButton({
+          x: 120,
+          y: HEIGHT - 50,
+          drawIcon: drawArrowRight,
+          onPress: () => {
+            this.touchRight = true;
+          },
+          onRelease: () => {
+            this.touchRight = false;
+          },
+        }),
+        jump: createButton({
+          x: WIDTH - 120,
+          y: HEIGHT - 50,
+          drawIcon: drawArrowUp,
+          onPress: () => {
+            this.touchJump = true;
+          },
+          onRelease: () => {
+            this.touchJump = false;
+          },
+        }),
+        throw: createButton({
+          x: WIDTH - 50,
+          y: HEIGHT - 50,
+          drawIcon: drawSnowflake,
+          onPress: () => {
+            this.touchThrow = true;
+          },
+          onRelease: () => {
+            this.touchThrow = false;
+          },
+        }),
+      };
     }
 
     scrollWorld(dx) {
