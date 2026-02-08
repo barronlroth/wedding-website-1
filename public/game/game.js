@@ -52,7 +52,80 @@
     },
   ];
 
+  class TitleScene extends Phaser.Scene {
+    constructor() {
+      super({ key: "TitleScene" });
+    }
+
+    preload() {
+      this.load.image("far", asset("far-bg.png"));
+    }
+
+    create() {
+      // Background
+      this.add.tileSprite(0, 0, WIDTH, HEIGHT, "far").setOrigin(0, 0);
+      this.add
+        .rectangle(0, 0, WIDTH, HEIGHT, 0x0b0f1a, 0.55)
+        .setOrigin(0, 0);
+
+      // Title
+      this.add
+        .text(WIDTH / 2, HEIGHT * 0.32, "How We Met", {
+          fontFamily: '"Press Start 2P", monospace',
+          fontSize: "28px",
+          color: "#e6eefc",
+          stroke: "#1a2744",
+          strokeThickness: 4,
+        })
+        .setOrigin(0.5);
+
+      // Subtitle
+      this.add
+        .text(WIDTH / 2, HEIGHT * 0.48, "A Barron & Nina Story", {
+          fontFamily: '"VT323", monospace',
+          fontSize: "18px",
+          color: "#8ab4f8",
+        })
+        .setOrigin(0.5);
+
+      // Blinking "Tap to Start" text
+      const startText = this.add
+        .text(WIDTH / 2, HEIGHT * 0.72, "Tap to Start", {
+          fontFamily: '"Press Start 2P", monospace',
+          fontSize: "14px",
+          color: "#ffffff",
+        })
+        .setOrigin(0.5);
+
+      this.tweens.add({
+        targets: startText,
+        alpha: 0.2,
+        duration: 800,
+        yoyo: true,
+        repeat: -1,
+        ease: "Sine.easeInOut",
+      });
+
+      // Entire screen is the tap target
+      this.input.on("pointerdown", () => {
+        this.scene.start("MeetingScene");
+      });
+
+      // Also support Enter / Space on desktop
+      this.input.keyboard.on("keydown-ENTER", () => {
+        this.scene.start("MeetingScene");
+      });
+      this.input.keyboard.on("keydown-SPACE", () => {
+        this.scene.start("MeetingScene");
+      });
+    }
+  }
+
   class MeetingScene extends Phaser.Scene {
+    constructor() {
+      super({ key: "MeetingScene" });
+    }
+
     preload() {
       const { width, height } = this.scale;
       const barWidth = 300;
@@ -247,13 +320,23 @@
         space: Phaser.Input.Keyboard.KeyCodes.SPACE,
         enter: Phaser.Input.Keyboard.KeyCodes.ENTER,
       });
+      this.isTouchDevice = "ontouchstart" in window || navigator.maxTouchPoints > 0;
+      this.touchLeft = false;
+      this.touchRight = false;
+      this.touchJump = false;
+      this.touchThrow = false;
+      if (this.isTouchDevice) {
+        this.createTouchControls();
+      }
 
       this.input.on("pointerdown", () => {
         if (this.dialogueActive || this.transitionActive) {
           this.advanceDialogue();
           return;
         }
-        this.pointerDown = true;
+        if (!this.isTouchDevice) {
+          this.pointerDown = true;
+        }
       });
       this.input.on("pointerup", () => {
         this.pointerDown = false;
@@ -308,9 +391,12 @@
         this.barron.setFrame(0);
       }
 
+      const touchJumpPressed = this.touchJump;
+      this.touchJump = false;
       const jumpPressed =
         Phaser.Input.Keyboard.JustDown(this.cursors.up) ||
-        Phaser.Input.Keyboard.JustDown(this.keys.w);
+        Phaser.Input.Keyboard.JustDown(this.keys.w) ||
+        touchJumpPressed;
 
       if (!this.gameOver && jumpPressed && this.barronGrounded) {
         this.barronVy = -JUMP_VELOCITY;
@@ -327,7 +413,9 @@
         }
       }
 
-      const throwPressed = Phaser.Input.Keyboard.JustDown(this.keys.space);
+      const touchThrowPressed = this.touchThrow;
+      this.touchThrow = false;
+      const throwPressed = Phaser.Input.Keyboard.JustDown(this.keys.space) || touchThrowPressed;
       if (!this.gameOver && throwPressed) {
         this.throwSnowball();
       }
@@ -342,8 +430,12 @@
 
     getMoveDir() {
       const moveRight =
-        (this.cursors.right && this.cursors.right.isDown) || this.keys.d.isDown || this.pointerDown;
-      const moveLeft = (this.cursors.left && this.cursors.left.isDown) || this.keys.a.isDown;
+        (this.cursors.right && this.cursors.right.isDown) ||
+        this.keys.d.isDown ||
+        this.pointerDown ||
+        this.touchRight;
+      const moveLeft =
+        (this.cursors.left && this.cursors.left.isDown) || this.keys.a.isDown || this.touchLeft;
 
       if (moveRight === moveLeft) {
         return 0;
@@ -352,6 +444,148 @@
       const dir = moveRight ? 1 : -1;
       this.facing = dir;
       return dir;
+    }
+
+    createTouchControls() {
+      this.input.addPointer(2);
+
+      const baseAlpha = 0.25;
+      const activeAlpha = 0.5;
+      const radius = 28;
+      const white = 0xffffff;
+
+      const drawArrowLeft = (g, x, y) => {
+        g.beginPath();
+        g.moveTo(x + 9, y - 10);
+        g.lineTo(x - 9, y);
+        g.lineTo(x + 9, y + 10);
+        g.strokePath();
+        g.beginPath();
+        g.moveTo(x + 11, y);
+        g.lineTo(x - 9, y);
+        g.strokePath();
+      };
+
+      const drawArrowRight = (g, x, y) => {
+        g.beginPath();
+        g.moveTo(x - 9, y - 10);
+        g.lineTo(x + 9, y);
+        g.lineTo(x - 9, y + 10);
+        g.strokePath();
+        g.beginPath();
+        g.moveTo(x - 11, y);
+        g.lineTo(x + 9, y);
+        g.strokePath();
+      };
+
+      const drawArrowUp = (g, x, y) => {
+        g.beginPath();
+        g.moveTo(x - 10, y + 9);
+        g.lineTo(x, y - 9);
+        g.lineTo(x + 10, y + 9);
+        g.strokePath();
+        g.beginPath();
+        g.moveTo(x, y + 11);
+        g.lineTo(x, y - 9);
+        g.strokePath();
+      };
+
+      const drawSnowflake = (g, x, y) => {
+        g.beginPath();
+        g.moveTo(x - 10, y);
+        g.lineTo(x + 10, y);
+        g.strokePath();
+        g.beginPath();
+        g.moveTo(x, y - 10);
+        g.lineTo(x, y + 10);
+        g.strokePath();
+        g.beginPath();
+        g.moveTo(x - 7, y - 7);
+        g.lineTo(x + 7, y + 7);
+        g.strokePath();
+        g.beginPath();
+        g.moveTo(x + 7, y - 7);
+        g.lineTo(x - 7, y + 7);
+        g.strokePath();
+      };
+
+      const createButton = ({ x, y, drawIcon, onPress, onRelease }) => {
+        const button = this.add.graphics();
+        button.fillStyle(white, 1);
+        button.fillCircle(x, y, radius);
+        button.lineStyle(2, white, 0.45);
+        button.strokeCircle(x, y, radius);
+        button.lineStyle(3, white, 0.95);
+        drawIcon(button, x, y);
+        button.setScrollFactor(0);
+        button.setDepth(1000);
+        button.setAlpha(baseAlpha);
+        button.setInteractive({
+          hitArea: new Phaser.Geom.Circle(x, y, radius),
+          hitAreaCallback: Phaser.Geom.Circle.Contains,
+        });
+
+        button.on("pointerdown", () => {
+          onPress();
+          button.setAlpha(activeAlpha);
+        });
+
+        const release = () => {
+          onRelease();
+          button.setAlpha(baseAlpha);
+        };
+
+        button.on("pointerup", release);
+        button.on("pointerout", release);
+        return button;
+      };
+
+      this.touchButtons = {
+        left: createButton({
+          x: 50,
+          y: HEIGHT - 50,
+          drawIcon: drawArrowLeft,
+          onPress: () => {
+            this.touchLeft = true;
+          },
+          onRelease: () => {
+            this.touchLeft = false;
+          },
+        }),
+        right: createButton({
+          x: 120,
+          y: HEIGHT - 50,
+          drawIcon: drawArrowRight,
+          onPress: () => {
+            this.touchRight = true;
+          },
+          onRelease: () => {
+            this.touchRight = false;
+          },
+        }),
+        jump: createButton({
+          x: WIDTH - 120,
+          y: HEIGHT - 50,
+          drawIcon: drawArrowUp,
+          onPress: () => {
+            this.touchJump = true;
+          },
+          onRelease: () => {
+            this.touchJump = false;
+          },
+        }),
+        throw: createButton({
+          x: WIDTH - 50,
+          y: HEIGHT - 50,
+          drawIcon: drawSnowflake,
+          onPress: () => {
+            this.touchThrow = true;
+          },
+          onRelease: () => {
+            this.touchThrow = false;
+          },
+        }),
+      };
     }
 
     scrollWorld(dx) {
@@ -1017,7 +1251,7 @@
       mode: Phaser.Scale.FIT,
       autoCenter: Phaser.Scale.CENTER_BOTH,
     },
-    scene: [MeetingScene],
+    scene: [TitleScene, MeetingScene],
   };
 
   new Phaser.Game(config);
