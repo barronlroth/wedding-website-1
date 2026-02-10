@@ -594,6 +594,11 @@
       this.near.tilePositionX += dx * 0.6;
       this.floor.tilePositionX += dx;
       this.lastScrollDx = dx;
+
+      // Keep raccoons anchored to the game world when scrolling
+      for (const raccoon of this.raccoons) {
+        raccoon.sprite.x -= dx;
+      }
     }
 
     updateSnow(dt, dx) {
