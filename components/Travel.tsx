@@ -22,7 +22,7 @@ const Travel: React.FC = () => {
           <h3 className="font-serif text-xl mb-3">Getting Around</h3>
           <p className="text-stone-600 text-sm">
             Coconut Grove is walkable, but we recommend Uber/Lyft to the venue. 
-            Valet parking will be provided at Villa Woodbine.
+            Valet parking will be provided at the venue.
           </p>
         </div>
       </div>

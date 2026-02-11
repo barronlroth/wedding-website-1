@@ -21,12 +21,12 @@ const Details: React.FC = () => {
         <p className="text-stone-500 font-light mb-8 max-w-md">{VENUE_ADDRESS}</p>
         <img 
           src="/images/villa-woodbine.jpg"
-          alt="Villa Woodbine" 
+          alt="Coconut Grove" 
           className="w-full max-w-4xl h-80 md:h-96 object-cover rounded-sm shadow-xl mb-8"
         />
         <div className="max-w-2xl text-stone-600 leading-relaxed">
           <p>
-            Nestled in the heart of Coconut Grove, Villa Woodbine is a private mansion designed in the 1930s. 
+            Nestled in the heart of Coconut Grove, our venue is a private mansion designed in the 1930s. 
             With its Spanish-arch styling and lush tropical gardens, it sets the perfect scene for our 
             "Tropical Black Tie" affair.
           </p>
