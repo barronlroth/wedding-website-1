@@ -2,7 +2,7 @@ import { NavItem, TimelineEvent, Hotel } from './types';
 
 export const WEDDING_DATE = "October 3, 2026";
 export const COUPLE_NAME = "Barron & Nina";
-export const VENUE_NAME = "Villa Woodbine";
+export const VENUE_NAME = "Coconut Grove";
 export const VENUE_ADDRESS = "2167 S Bayshore Dr, Miami, FL 33133";
 export const LOCATION = "Coconut Grove, Miami";
 
